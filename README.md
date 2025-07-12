@@ -1,5 +1,5 @@
 #  Coral Bleaching vs Sea Surface Temperature (2019–2020)
-**Author:** **Nguyễn Triệu Vy Thư **
+**Author:** ** Nguyễn Triệu Vy Thư **
 **Scope:** Analyze the correlation between coral bleaching percentage and sea surface temperature at shallow reefs (0–5m) in Indonesia and Philippines.
 
 ## Project Objectives
