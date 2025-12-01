@@ -13,7 +13,6 @@ Include key charts here (or link to `charts/` folder)
 
 ## Tech Stack
 - Python (Pandas, Seaborn, Matplotlib)
-- Jupyter Notebook
 - Git + GitHub
 
 ## Data Source
