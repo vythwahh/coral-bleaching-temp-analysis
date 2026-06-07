@@ -499,4 +499,4 @@ if __name__ == "__main__":
             sys.exit(1)
 
     region = sys.argv[2] if len(sys.argv) > 2 else "Indonesia"
-    run_pipeline(csv_path, region)
+    run_pipeline(csv_path, region) 
