@@ -1,9 +1,8 @@
 """
 EcoCast - ml_engine.py
-======================
+ 
 Coral Bleaching Prediction Engine
-Author: Nguyễn Triệu Vy Thư (refactored from coral-bleaching-temp-analysis)
-
+ 
 Pipeline:
   1. Load & preprocess historical SST + bleaching survey data
   2. Forecast SST for next 30 days (ARIMA preferred, XGBoost fallback)
@@ -20,7 +19,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import Tuple, Dict, Optional
 
-# ── Try importing model backends ───────────────────────────────────────────────
+# Try importing model backends 
 try:
     from statsmodels.tsa.arima.model import ARIMA
     ARIMA_AVAILABLE = True
@@ -34,9 +33,9 @@ except ImportError:
     XGB_AVAILABLE = False
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+ 
 # CONSTANTS
-# ══════════════════════════════════════════════════════════════════════════════
+ 
 
 # Maximum Monthly Mean (MMM) baseline per region — °C
 REGION_MMM = {
@@ -59,9 +58,9 @@ DHW_THRESHOLDS = {
 }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+ 
 # DATA LOADING & PREPROCESSING
-# ══════════════════════════════════════════════════════════════════════════════
+ 
 
 def load_and_preprocess(csv_path: str, region: str) -> pd.Series:
     """
@@ -126,15 +125,15 @@ def load_and_preprocess(csv_path: str, region: str) -> pd.Series:
     # Fill gaps with forward-fill (max 7 days)
     ts = ts.resample("D").mean().ffill(limit=7)
     
-    # CHỐT CHẶN BẢO VỆ 1: Dọn sạch rác nếu dữ liệu thô quá khứ bị lỗi nhảy số bốc đầu
+     
     ts["sst"] = np.clip(ts["sst"], 15.0, 35.0)
 
     return ts["sst"]
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+ 
 # FORECASTING ENGINE
-# ══════════════════════════════════════════════════════════════════════════════
+ 
 
 def _make_xgb_features(series: pd.Series, lags: int = 14) -> Tuple[np.ndarray, np.ndarray]:
     X, y = [], []
@@ -203,7 +202,7 @@ def forecast_sst(
         lower = forecast_mean - 1.645 * residual_std
         upper = forecast_mean + 1.645 * residual_std
 
-    # CHỐT CHẶN BẢO VỆ 2: Ép nhiệt độ dự đoán luôn nằm trong giới hạn thực tế (15°C - 35°C)
+     
     forecast_mean = np.clip(forecast_mean, 15.0, 31.5)
     lower = np.clip(lower, 15.0, 31.5)
     upper = np.clip(upper, 15.0, 31.5)
@@ -216,10 +215,8 @@ def forecast_sst(
     }).set_index("date")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# DHW CALCULATOR
-# ══════════════════════════════════════════════════════════════════════════════
-
+ 
+ 
 def compute_dhw(
     historical_ts: pd.Series,
     forecast_df: pd.DataFrame,
@@ -241,17 +238,17 @@ def compute_dhw(
     combined = combined[~combined.index.duplicated(keep="last")]
     combined = combined.sort_index()
 
-    # CHỐT CHẶN BẢO VỆ TỐI THƯỢNG: Ép toàn bộ mảng dữ liệu tính DHW về đúng ngưỡng sinh học bình thường
+     
     combined = np.clip(combined, 15.0, 31.5)
 
-    # Hotspot: SST − MMM, chỉ tính khi vượt ngưỡng tối thiểu 1°C
+     
     hotspot = (combined - mmm).clip(lower=0)
     hotspot[hotspot < 1.0] = 0  
 
-    # Tính toán rolling DHW chuẩn chỉnh (degree-days → degree-weeks)
+     
     dhw = hotspot.rolling(window=rolling_window, min_periods=1).sum() / 7.0
 
-    # Cắt đúng cửa sổ 30 ngày dự đoán tương lai để trả về kết quả
+     
     forecast_dates = forecast_df.index
     result = pd.DataFrame({
         "sst":       combined.loc[forecast_dates].values,
@@ -274,20 +271,20 @@ def _dhw_to_risk(dhw: float) -> float:
 
 def _dhw_to_alert(dhw: float) -> str:
     if dhw >= DHW_THRESHOLDS["Alert 2"]:
-        return "🔴 Alert Level 2"
+        return "Alert Level 2"
     elif dhw >= DHW_THRESHOLDS["Alert 1"]:
-        return "🟠 Alert Level 1"
+        return "Alert Level 1"
     elif dhw >= DHW_THRESHOLDS["Warning"]:
-        return "🟡 Warning"
+        return "Warning"
     elif dhw >= DHW_THRESHOLDS["Watch"]:
-        return "🔵 Watch"
+        return "Watch"
     else:
-        return "🟢 No Stress"
+        return "No Stress"
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+ 
 # NATURAL LANGUAGE ANALYSIS (NLA)
-# ══════════════════════════════════════════════════════════════════════════════
+ 
 
 def generate_nla(
     region: str,
@@ -315,20 +312,20 @@ def generate_nla(
         trend_desc = "relatively stable"
 
     if peak_risk_pct >= 85:
-        headline = f"🚨 CRITICAL — {region}: Severe bleaching event highly probable"
+        headline = f" CRITICAL — {region}: Severe bleaching event highly probable"
     elif peak_risk_pct >= 60:
-        headline = f"⚠️ HIGH RISK — {region}: Significant bleaching likely"
+        headline = f" HIGH RISK — {region}: Significant bleaching likely"
     elif peak_risk_pct >= 35:
-        headline = f"⚡ ELEVATED — {region}: Thermal stress building"
+        headline = f" ELEVATED — {region}: Thermal stress building"
     else:
-        headline = f"✅ LOW RISK — {region}: Conditions within normal range"
+        headline = f" LOW RISK — {region}: Conditions within normal range"
 
     summary = (
         f"Over the next 30 days, sea surface temperatures in {region} are projected to average "
         f"{avg_sst_fore:.2f}°C — a {'+' if sst_anomaly >= 0 else ''}{sst_anomaly}°C anomaly relative to "
         f"the Maximum Monthly Mean baseline of {mmm}°C. "
         f"Degree Heating Weeks are forecast to peak at {peak_dhw:.1f}°C-weeks on {peak_date}, "
-        f"corresponding to a bleaching probability of {peak_risk_pct}% ({alert_level.replace('🔴','').replace('🟠','').replace('🟡','').replace('🔵','').replace('🟢','').strip()}). "
+        f"corresponding to a bleaching probability of {peak_risk_pct}% ({alert_level.replace('Alert Level 2','').replace('Alert Level 1','').replace('Warning','').replace('Watch','').replace('No Stress','').strip()}). "
         f"SST is currently {trend_desc} across the forecast window."
     )
 
@@ -358,9 +355,9 @@ def generate_nla(
     }
 
 
-# ══════════════════════════════════════════════════════════════════════════════
+ 
 # MAIN PIPELINE
-# ══════════════════════════════════════════════════════════════════════════════
+ 
 
 def run_pipeline(
     csv_path: str,
