@@ -50,6 +50,7 @@ st.markdown("""
 .agent-badge { display:inline-block; background:linear-gradient(135deg,#0d6ea1,#1a1a2e); color:white; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:600; letter-spacing:0.05em; margin-left:8px; vertical-align:middle; }
 .dispatch-box { background:#0d1117; border:1px solid #30363d; border-radius:8px; padding:1rem 1.2rem; font-family:'Courier New',monospace; font-size:0.82rem; color:#7ee787; line-height:1.8; }
 .letter-box { background:#fafafa; border:1px solid #e0e0e0; border-left:4px solid #0d6ea1; border-radius:6px; padding:1.2rem 1.5rem; font-family:'Georgia',serif; font-size:0.88rem; line-height:1.8; color:#222; white-space:pre-wrap; }
+.nla-box { background:#1a1a2e; color:#e0e0e0; border-radius:10px; padding:1.2rem 1.5rem; font-family:monospace; font-size:0.9rem; line-height:1.7; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -320,7 +321,28 @@ def main():
                       "Moderate" if local_risk >= 0.35 else "Low"),
         })
     if rows:
-        st.dataframe(pd.DataFrame(rows), hide_index=True)
+        df_map = pd.DataFrame(rows)
+        st.dataframe(df_map, hide_index=True)
+        fig_map = go.Figure(go.Scattergeo(
+            lat=df_map["Lat"], lon=df_map["Lon"],
+            text=df_map["Reef Site"],
+            mode="markers+text", textposition="top center",
+            marker=dict(size=12, color="#0d6ea1"),
+        ))
+        fig_map.update_geos(fitbounds="locations", showland=True, landcolor="#f0f7ff",
+                            showocean=True, oceancolor="#cce5ff", showcoastlines=True)
+        fig_map.update_layout(height=350, margin=dict(l=0, r=0, t=0, b=0))
+        st.plotly_chart(fig_map, use_container_width=True)
+    st.markdown('<p class="section-title">Natural Language Analysis (NLA)</p>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="nla-box">'
+        f'<b>HEADLINE:</b> {nla["headline"]}<br><br>'
+        f'<b>ANALYSIS:</b> {nla["summary"]}<br><br>'
+        f'<b>TREND:</b> {nla["trend"]}<br><br>'
+        f'<b>ACTION:</b> {nla["action"]}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     st.markdown('<p class="section-title">Export Data</p>', unsafe_allow_html=True)
     export_df = dhw_df.copy()
@@ -339,7 +361,7 @@ def main():
     with ex_col2:
         st.expander("Preview forecast table").dataframe(
             export_df[["date", "sst_forecast", "dhw", "bleaching_risk", "alert_level"]].head(15),
-            use_container_width=True)
+            width="stretch")
 
     st.markdown('<p class="section-title">Action Agent<span class="agent-badge">AGENTIC</span></p>', unsafe_allow_html=True)
     if agent_mode:
