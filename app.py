@@ -1,7 +1,7 @@
 """
 EcoCast - app.py
 Coral Bleaching Prediction Dashboard
-Author: Nguyen Trieu Vy Thu
+
 
 Run:
     streamlit run app.py
