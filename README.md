@@ -122,6 +122,7 @@ EcoCast/
 
 **Why ARIMA over a deep learning model?**
 With ~365 daily observations per region after filtering, ARIMA(5,1,0) outperforms RNN/LSTM in both stability and interpretability. SST exhibits high autocorrelation and clear seasonal structure — exactly the conditions where ARIMA excels.
+**The Claude API integration** is implemented but not validated end-to-end due to API access constraints. In demo mode, the chat agent returns template-based responses derived from live ML inference outputs. To enable full LLM-powered responses, add a valid sk-ant-... key to the Agent Settings panel. The agentic layer architecture (prompt construction, context injection, multi-turn history) is production-ready and **can be swapped to any OpenAI-compatible API (Gemini, Groq, OpenAI) ** by modifying the endpoint and model string in agent_action.py.
 
 **DHW calibration**
 MMM baselines are approximate region-level values. For production use, pixel-level NOAA CoralTemp climatology (5 km resolution) should replace the hardcoded constants in `REGION_MMM`.
