@@ -73,6 +73,25 @@ REGION_COORDS = {
 # DATA LOADING & PREPROCESSING
 
 
+def _filter_countries_by_region(df: pd.DataFrame, region: str) -> pd.DataFrame:
+    """Filter the dataframe based on country mapping for the given region."""
+    country_map = {
+        "Indonesia":  ["Indonesia"],
+        "Philippines": ["Philippines"],
+        "Great Barrier Reef": ["Australia"],
+        "Coral Sea":  ["Australia"],
+        "Red Sea":    ["Egypt", "Saudi Arabia", "Yemen"],
+        "Caribbean":  ["Mexico", "Belize", "Cuba", "Jamaica"],
+        "Maldives":   ["Maldives"],
+        "Coral Triangle": ["Indonesia", "Philippines", "Papua New Guinea",
+                           "Solomon Islands", "Timor-Leste", "Malaysia"],
+    }
+    countries = country_map.get(region, [region])
+    if "country_name" in df.columns:
+        return df[df["country_name"].isin(countries)]
+    return df
+
+
 def load_and_preprocess(csv_path: str, region: str) -> pd.DataFrame:
     """
     Load the Donner et al. coral survey CSV and return a clean
@@ -96,20 +115,6 @@ def load_and_preprocess(csv_path: str, region: str) -> pd.DataFrame:
         .str.lower()
     )
 
-    # Map region label → country filter
-    country_map = {
-        "Indonesia":  ["Indonesia"],
-        "Philippines": ["Philippines"],
-        "Great Barrier Reef": ["Australia"],
-        "Coral Sea":  ["Australia"],
-        "Red Sea":    ["Egypt", "Saudi Arabia", "Yemen"],
-        "Caribbean":  ["Mexico", "Belize", "Cuba", "Jamaica"],
-        "Maldives":   ["Maldives"],
-        "Coral Triangle": ["Indonesia", "Philippines", "Papua New Guinea",
-                           "Solomon Islands", "Timor-Leste", "Malaysia"],
-    }
-    countries = country_map.get(region, [region])
-
     # Parse date & numeric columns
     for col in ["date", "date_collected"]:
         if col in df.columns:
@@ -123,8 +128,8 @@ def load_and_preprocess(csv_path: str, region: str) -> pd.DataFrame:
                 df["sst"] = df["sst"] - 273.15
             break
 
-    if "country_name" in df.columns:
-        df = df[df["country_name"].isin(countries)]
+    # Called helper function to filter country data
+    df = _filter_countries_by_region(df, region)
 
     if "depth_m" in df.columns:
         df["depth_m"] = pd.to_numeric(df["depth_m"], errors="coerce")
@@ -150,7 +155,6 @@ def load_and_preprocess(csv_path: str, region: str) -> pd.DataFrame:
     ts = ts.resample("D").mean().ffill(limit=7)
 
     return ts
-
 
 def generate_synthetic_ts(region: str, n_days: int = 365) -> pd.Series:
     """Generate realistic synthetic SST time-series for demo mode."""
