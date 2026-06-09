@@ -2,7 +2,7 @@
 EcoCast - ml_engine.py
 ======================
 Coral Bleaching Prediction Engine
-Author: Nguyễn Triệu Vy Thư (refactored from coral-bleaching-temp-analysis)
+
 
 Pipeline:
   1. Load & preprocess historical SST + bleaching survey data
