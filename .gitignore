@@ -1,1 +1,3 @@
 global_bleaching_environmental.csv
+__pycache__/
+*.pyc
