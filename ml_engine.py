@@ -92,21 +92,9 @@ def _filter_countries_by_region(df: pd.DataFrame, region: str) -> pd.DataFrame:
     return df
 
 
-def load_and_preprocess(csv_path: str, region: str) -> pd.DataFrame:
-    """
-    Load the Donner et al. coral survey CSV and return a clean
-    daily/weekly SST time-series for the given region.
-
-    Args:
-        csv_path: path to the raw CSV file
-        region:   one of REGION_MMM keys (used to filter Country_Name)
-
-    Returns:
-        DataFrame with columns [date, sst] indexed by date, sorted ascending.
-    """
+def load_and_preprocess(csv_path: str, region: str) -> pd.Series:
     df = pd.read_csv(csv_path, low_memory=False)
 
-    # Standardise column names
     df.columns = (
         df.columns
         .str.strip()
@@ -115,7 +103,6 @@ def load_and_preprocess(csv_path: str, region: str) -> pd.DataFrame:
         .str.lower()
     )
 
-    # Parse date & numeric columns
     for col in ["date", "date_collected"]:
         if col in df.columns:
             df["date"] = pd.to_datetime(df[col], errors="coerce")
@@ -128,7 +115,6 @@ def load_and_preprocess(csv_path: str, region: str) -> pd.DataFrame:
                 df["sst"] = df["sst"] - 273.15
             break
 
-    # Called helper function to filter country data
     df = _filter_countries_by_region(df, region)
 
     if "depth_m" in df.columns:
@@ -138,22 +124,19 @@ def load_and_preprocess(csv_path: str, region: str) -> pd.DataFrame:
     df = df.dropna(subset=["date", "sst"])
     df = df.sort_values("date")
 
-    # Use only the most recent 3 years to keep ARIMA tractable
     cutoff = df["date"].max() - pd.DateOffset(years=3)
     df = df[df["date"] >= cutoff]
 
-    # Aggregate to daily mean SST
     ts = (
         df.groupby("date")["sst"]
         .mean()
         .reset_index()
-        .rename(columns={"date": "date", "sst": "sst"})
+        .set_index("date")["sst"]
+        .sort_index()
     )
-    ts = ts.set_index("date").sort_index()
 
-    # Fill gaps with forward-fill (max 7 days)
     ts = ts.resample("D").mean().ffill(limit=7)
-
+    ts.name = "sst"
     return ts
 
 def generate_synthetic_ts(region: str, n_days: int = 365) -> pd.Series:
