@@ -167,7 +167,7 @@ def _make_xgb_features(series: pd.Series, lags: int = 14) -> Tuple[np.ndarray, n
 
 
 def forecast_sst(
-    ts: pd.Series,
+    ts,
     horizon: int = 30,
     backend: str = "auto",
 ) -> pd.DataFrame:
@@ -182,6 +182,11 @@ def forecast_sst(
     Returns:
         DataFrame with columns [date, sst_forecast, lower_ci, upper_ci]
     """
+    if isinstance(ts, pd.DataFrame):
+        if "sst" in ts.columns:
+            ts = ts["sst"]
+        else:
+            raise ValueError("DataFrame must contain 'sst' column.")
     if len(ts) < 30:
         raise ValueError(
             f"Time series too short ({len(ts)} obs). Need at least 30 data points."
