@@ -137,6 +137,13 @@ Email and Slack dispatch are currently simulated (logged to console). To enable 
 This project was built as a personal side project alongside a Data Science degree at the University of Science, VNU-HCM (HCMUS). The long-term motivation is applying data engineering and machine learning to ocean conservation — specifically supporting early warning systems for coral reef monitoring organisations such as NOAA Coral Reef Watch and Global Fishing Watch.
 
 ---
+## Performance Notes
+
+- **Bathymetric Overview map** requires fetching real ETOPO1 bathymetry data 
+  from NOAA ERDDAP on first load (~10-15s depending on network).
+- Subsequent loads of the same region are cached via `st.cache_data` and load instantly.
+- Switching to a new region will trigger a re-fetch for that region.
+---
 
 ## References
 
