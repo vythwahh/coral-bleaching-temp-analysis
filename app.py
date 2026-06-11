@@ -2,13 +2,11 @@
 EcoCast - app.py
 Coral Bleaching Prediction Dashboard
 
-
 Run:
     streamlit run app.py
 
 Dependencies:
-    pip install streamlit pandas numpy statsmodels xgboost folium streamlit-folium
-                  plotly matplotlib seaborn
+    pip install streamlit pandas numpy statsmodels xgboost plotly matplotlib seaborn
 """
 
 import warnings
@@ -20,7 +18,7 @@ import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime
 import io
-
+from bathymetric_map import plot_bathymetric_overview
 from ml_engine import (
     load_and_preprocess,
     forecast_sst,
@@ -191,7 +189,14 @@ def plot_bleaching_risk(dhw_df, selected_day):
     fig.update_layout(height=300, margin=dict(l=20, r=20, t=60, b=20))
     return fig
 
-
+@st.cache_data
+def get_bathymetric_map(region, selected_date, rows_json):
+    df_sites = pd.read_json(rows_json) if rows_json else None
+    return plot_bathymetric_overview(
+        region=region,
+        df_sites=df_sites,
+        selected_date=selected_date,
+    )
 def sidebar():
     st.sidebar.markdown("## EcoCast")
     st.sidebar.markdown("*Coral Bleaching Prediction System*")
@@ -320,6 +325,8 @@ def main():
             "Alert": ("Critical" if local_risk >= 0.85 else "High" if local_risk >= 0.60 else
                       "Moderate" if local_risk >= 0.35 else "Low"),
         })
+
+    df_map = None
     if rows:
         df_map = pd.DataFrame(rows)
         st.dataframe(df_map, hide_index=True)
@@ -333,6 +340,7 @@ def main():
                             showocean=True, oceancolor="#cce5ff", showcoastlines=True)
         fig_map.update_layout(height=350, margin=dict(l=0, r=0, t=0, b=0))
         st.plotly_chart(fig_map, use_container_width=True)
+
     st.markdown('<p class="section-title">Natural Language Analysis (NLA)</p>', unsafe_allow_html=True)
     st.markdown(
         f'<div class="nla-box">'
@@ -343,6 +351,18 @@ def main():
         f'</div>',
         unsafe_allow_html=True,
     )
+
+    st.markdown('<p class="section-title">Bathymetric Overview</p>', unsafe_allow_html=True)
+    st.caption("NOAA-style bathymetric map with reef site bleaching risk overlay.")
+    if df_map is not None:
+        bathy_png = plot_bathymetric_overview(
+            region=region,
+            df_sites=df_map,
+            selected_date=selected_date,
+        )
+        st.image(bathy_png, use_container_width=True)
+    else:
+        st.info("No reef site data available for this region.")
 
     st.markdown('<p class="section-title">Export Data</p>', unsafe_allow_html=True)
     export_df = dhw_df.copy()
