@@ -355,10 +355,10 @@ def main():
     st.markdown('<p class="section-title">Bathymetric Overview</p>', unsafe_allow_html=True)
     st.caption("NOAA-style bathymetric map with reef site bleaching risk overlay.")
     if df_map is not None:
-        bathy_png = plot_bathymetric_overview(
+        bathy_png = get_bathymetric_map(
             region=region,
-            df_sites=df_map,
             selected_date=selected_date,
+            rows_json=df_map.to_json(),
         )
         st.image(bathy_png, use_container_width=True)
     else:
